@@ -1,0 +1,169 @@
+JENKINS
+Automated Continuous Integration/Continuous Deployment (CI/CD) pipeline for a Java web application using Jenkins, Git and Docker.
+ 
+
+
+STEP 1: Create two EC2 instances 
+	We need to create two Ubuntu EC2- instances for this project. One for Jenkins and another one for docker.
+For first EC2 instance, we want to install java and Jenkins and docker.
+Java:
+•	apt-get update
+•	apt install openjdk-17-jre
+•	java –version or systemctl status java
+Jenkins:
+sudo wget -O /usr/share/keyrings/jenkins-keyring.asc \
+  https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key
+echo deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] \
+https://pkg.jenkins.io/debian-stable binary/ | sudo tee \
+/etc/apt/sources.list.d/jenkins.list > /dev/null
+
+apt-get update
+      apt install jenkins
+systemctl status Jenkins
+
+Docker:
+•	apt-get update
+•	apt install docker.io
+•	systemctl status docker
+
+For second EC2-instance, we want to install docker for deployment purpose.
+Docker:
+•	apt-get update
+•	apt install docker.io
+•	systemctl status docker
+
+To open Jenkins by using the first EC2 public IP address with port number 8080.
+We can get the administrative password from location /var/lib/Jenkins/secrete/InitialAdminPassword
+By using this password, we can get into the Jenkins.
+
+STEP 2: Clone the git repository
+		Git url: https://github.com/madhan-selvamani/java-web-app-docker.git
+
+Go to the Jenkins and create a job named as “my-server”. Choose the pipeline workflow and write the script to get the code from GitHub. We can see our job  is created in Jenkins’s server (/var/lib/Jenkins/workspace). If you’ve any doubt whether job is successfully run or not, open the job we can see the files that fetch from the GitHub (cd my-server/)
+
+
+Scripts:
+node
+{
+   stage (“Git clone”) {
+        git url: ‘https://github.com/madhan-selvamani/java-web-app-docker.git’, branch: 'master'
+    }
+}
+
+Write the script and save it. Then go back to the dashboard and build the code, we can see console output.it shows success.
+
+STEP 3: Packaging the application into distributed format(war).
+
+	Maven is a widely used build automation and project management tool primarily used for Java projects.
+Benefits and Purpose:
+Automation: The script automates the build process of a Maven-based project. The build process involves cleaning the project, compiling source code, running tests, and packaging the application into a distributable format (e.g., JAR or WAR file).
+The required dependency are getting downloaded from maven central repository to Jenkins server.
+
+Scripts:
+      stage (“ Maven Clean Package”) {
+      def mavenHome =  tool name: "Maven", type: "maven"
+      sh "${mavenHome}/bin/mvn clean package"
+    } 
+
+STEP 4: Build docker image
+
+ 
+	Create a docker image from docker file in the jenkins server. Before build a docker image we need to add the user to the group
+	usermod -aG jenkins jenkins server
+	usermod -aG docker docker server
+
+   stage("Build Dokcer Image") {
+         sh "docker build -t madhanselvamani/javawebapp:${buildNumber} ."
+    }
+	Once we created the image, we can check it in our jenkins server “docker images” command. The new tomcat image is created.
+
+STEP 5: Push the docker image
+
+	 After we created the image, we need to push it to docker hub. 
+We need to provide docker username and password to login and push the image. But password must be secret, so go to 
+	Pipeline syntax withCredential : Bind credential’s with variableadd binding ( secret text)add jenkins secret text here we can give our docker hub password secretly and give the variable name “Dockerpassword”
+
+    stage ("Docker login and Push"){
+        withCredentials([string(credentialsId: 'Dockerpassword', variable: 'Dockerpassword')]) {  
+           sh "docker login -u madhanselvamani -p ${Dockerpassword} " 
+           }
+        sh "docker push madhanselvamani/javawebapp:${buildNumber}"
+    }
+We can check it in our docker hub whether it is pushed or not.
+
+STEP 6: Deployment
+
+	We want to deploy java application as a docker container in docker deployment server.	Now we are going to deploy the tomcat application in docker deployment server. So we want to connect the jenkins with deployment server. For that
+We need to install the ssh agent plugin
+Pipeline syntaxsshagent username with private keyhere, give the username (ubuntu) and private key generate the pipeline script.
+
+
+    stage("Deploy to dockercontinor in docker deployer"){
+sshagent(['Docker']) {
+            sh "ssh -o StrictHostKeyChecking=no ubuntu@ 172.31.35.102 docker rm -f mycontainer|| true"
+            sh "ssh -o StrictHostKeyChecking=no ubuntu@ 172.31.35.102 docker run -d -p 8080:8080 --name mycontainer madhanselvamani/javawebapp:${buildNumber}"
+    }  
+}
+ 
+
+
+
+Step 1: Create Two EC2 Instances
+
+Purpose: Set up two Ubuntu EC2 instances, one for Jenkins and Docker, and another for Docker deployment.
+
+Jenkins and Docker Server:
+
+Install Java, Jenkins, and Docker.
+Jenkins is configured to run on port 8080.
+Docker is installed to facilitate containerization.
+
+Docker Deployment Server:
+
+Install Docker for deployment purposes.
+
+
+Step 2: Clone the Git Repository
+Purpose: Configure Jenkins to fetch the Java web application code from a Git repository.
+
+Jenkins Job Setup:
+Create a Jenkins job named "my-server" with a pipeline workflow.
+Use a pipeline script to clone the Java web application from the specified Git repository.
+
+Step 3: Packaging the Application into Distributed Format (WAR)
+Purpose: Utilize Maven for building the Java web application and packaging it into a distributable format.
+
+Maven Build:
+Execute a Maven build stage in the Jenkins pipeline.
+Maven is used to clean, compile, run tests, and package the application into a WAR file.
+
+Step 4: Build Docker Image
+Purpose: Create a Docker image for the Java web application using a Dockerfile.
+
+Docker Image Creation:
+Add the Jenkins user to the Docker group for proper permissions.
+Build a Docker image from the Dockerfile, tagging it with a version number.
+
+Step 5: Push the Docker Image to Docker Hub
+Purpose: Push the Docker image to Docker Hub for centralized storage and distribution.
+
+Docker Hub Push:
+Use Jenkins credentials to securely log in to Docker Hub.
+Push the Docker image with versioning to the Docker Hub repository.
+
+Step 6: Deployment
+Purpose: Deploy the Java web application as a Docker container on a remote Docker deployment server.
+
+SSH Deployment:
+Utilize the SSH Agent plugin to establish a secure connection to the deployment server.
+Remove any existing container with the same name on the deployment server.
+Run a new Docker container on the deployment server, exposing port 8080.
+
+Code Retrieval: Jenkins fetches the code from a Git repository.
+Build with Maven: The Java application is built and packaged into a distributable format (WAR) using Maven.
+Docker Image Creation: A Docker image is created for the application using a Dockerfile.
+Docker Hub Push: The Docker image is securely pushed to Docker Hub for centralized storage.
+Deployment: The application is deployed as a Docker container on a remote server using SSH.
+
+Summary for Interview:
+In this project, we set up Jenkins and Docker on one EC2 instance and Docker on another. We configured Jenkins to automate the entire CI/CD process for a Java web application:
