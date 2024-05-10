@@ -1,0 +1,46 @@
+Serverless User Information Management System:
+
+Requirements:
+
+1. IAM 
+2. Dynamo DB
+3. SNS
+4. Lambda
+5. API Gateway
+6. S3 Bucket
+
+Step 1: Set Up IAM Roles and Policies
+
+Create IAM Role: Create an IAM role for your Lambda function with permissions to access DynamoDB and SNS.
+Attach Policies: Attach policies like AmazonDynamoDBFullAccess and AmazonSNSFullAccess to the IAM role.
+
+Step 2: Create DynamoDB Table
+
+Create Table: Create a table named "UserInformation" with a primary key named "UserId".
+Configure Table: Set up the table properties and provisioned capacity as per your requirements.
+
+Step 3: Create SNS Topic
+
+Create Topic: Create an SNS topic named "UserNotification".
+Configure Topic: Set up any required settings for the topic, such as access policies or message delivery options.
+
+Step 4: Design Lambda Function
+
+Create Function: Create a new Lambda function with the appropriate runtime (Python 3.12). Choose an existing role that you created in IAM.
+Code Function: Write the Lambda function code to receive data from API Gateway, validate it, and insert it into DynamoDB.
+Set Triggers: Add triggers to the Lambda function from API Gateway and SNS.
+Test Function: We need Deploy the code and Test the function locally or using test events to ensure it's working correctly.
+
+Step 5: Implement API Gateway
+
+Create API: Create a new REST API with the desired name and configuration.
+Create Resource: Define a resource and method (POST) to handle incoming requests.
+Integrate with Lambda: Connect the API method to the Lambda function created earlier.
+Deploy API: Deploy the API to a stage (prod) to generate an endpoint URL.
+
+Step 6: Host Website on S3 Bucket
+
+Create Bucket: Create a new S3 bucket with a unique name.
+Upload Files: Upload your website files (HTML, CSS, JavaScript) to the bucket.
+Configure Bucket: Set permissions to allow public access to the website files.
+Enable Website Hosting: Enable static website hosting for the bucket and specify the index document (index.html).

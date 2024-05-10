@@ -4,12 +4,12 @@ import boto3
 # Create a DynamoDB object using the AWS SDK
 dynamodb = boto3.resource('dynamodb')
 # Use the DynamoDB object to select our table
-table = dynamodb.Table('userinformation')
+table = dynamodb.Table('TABLE NAME')
 
 # Create an SNS client
 sns_client = boto3.client('sns')
 # Define the ARN of your SNS topic
-sns_topic_arn = 'arn:aws:sns:us-east-1:313286460242:msg_sent'
+sns_topic_arn = 'Your SNS ARN'
 
 # Define the handler function that the Lambda service will use as an entry point
 def lambda_handler(event, context):
